@@ -181,6 +181,7 @@ function removeRule (uid) {
   * @param {string} uid the UID of the rule to run
   * @param {Record<string, unknown>} [args={}] args optional dict of data to pass to the called rule
   * @param {boolean} [conditions=true] when true, the called rule will only run if it's conditions are met
+  * @returns {Map<String, Object>} A copy of the rule context, including possible return values
   * @throws {Error} throws an error if the rule does not exist or is not initialized.
   */
 function runRule (uid, args = {}, conditions = true) {
@@ -192,7 +193,29 @@ function runRule (uid, args = {}, conditions = true) {
     throw Error('Rule ' + uid + ' is UNINITIALIZED');
   }
 
-  ruleManager.runNow(uid, conditions, javaify(args));
+  return ruleManager.runNow(uid, conditions, javaify(args));
+}
+
+/**
+  * Runs the rule with the given UID asynchronously, without waiting for the execution to complete.
+  * Throws errors when the rule doesn't exist or is unable to run (e.g. it's disabled).
+  *
+  * @memberof rules
+  * @param {string} uid the UID of the rule to run
+  * @param {Record<string, unknown>} [args={}] args optional dict of data to pass to the called rule
+  * @param {boolean} [conditions=true] when true, the called rule will only run if it's conditions are met
+  * @throws {Error} throws an error if the rule does not exist or is not initialized.
+  */
+function runAsync (uid, args = {}, conditions = true) {
+  const status = ruleManager.getStatus(uid);
+  if (!status) {
+    throw Error('There is no rule with UID ' + uid);
+  }
+  if (status.toString() === 'UNINITIALIZED') {
+    throw Error('Rule ' + uid + ' is UNINITIALIZED');
+  }
+
+  ruleManager.runAsync(uid, conditions, javaify(args));
 }
 
 /**
@@ -635,6 +658,7 @@ function _getTriggeredData (rawInput, javaEventBackwardCompat = false) {
 module.exports = {
   removeRule,
   runRule,
+  runAsync,
   isEnabled,
   setEnabled,
   JSRule,
